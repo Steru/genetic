@@ -5,9 +5,7 @@ library(igraph)
 setwd("D:/")
 
 #---------------------------------------------------------------
-#
 # FUNCTION TO DRAWING
-#
 #----------------------------------------------------------------
 plot.tour <- function(x, y, tour) {
     n <- nrow(tour)
@@ -20,9 +18,7 @@ plot.tour <- function(x, y, tour) {
     }
 }
 #---------------------------------------------------------------
-#
 # FUNCTION TO COUNTING
-#
 #----------------------------------------------------------------
 generateDistMatrix <- function(cordinates) {
 	len <- length(cordinates)/2
@@ -49,19 +45,21 @@ tourLength <- function(tour, distMatrix) {
 tpsFitness <- function(tour, ...) 1/tourLength(tour, ...)
 
 #---------------------------------------------------------------
-# load data
+# LOAD DATA
 #---------------------------------------------------------------
+
 r <- read_TSPLIB("PWr/Lab35/att48.tsp")
 
 #---------------------------------------------------------------
-#
 # START COUNTING
-#
 #----------------------------------------------------------------
+# create matrix with cities distances
 D <- generateDistMatrix(as.matrix(r))
 
+# number of cities
 len <- length(r)/2
 result <- 0
+# number of iteration
 iteration <- 30
 
 for(i in 1:iteration) {
@@ -76,9 +74,7 @@ GA.fit <- ga(type = "permutation", fitness = tpsFitness, distMatrix = D, min = 1
 result <- result/iteration
 
 #---------------------------------------------------------------
-#
 # DRAWING
-#
 #----------------------------------------------------------------
 
 mat <- as.matrix(r)
