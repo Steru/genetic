@@ -47,14 +47,17 @@ tourLength <- function(tour, distMatrix) {
 }
 # inverse of thetotal distance is the fitness
 tpsFitness <- function(tour, ...) 1/tourLength(tour, ...)
+
+#---------------------------------------------------------------
+# load data
+#---------------------------------------------------------------
+r <- read_TSPLIB("PWr/Lab35/att48.tsp")
+
 #---------------------------------------------------------------
 #
 # START COUNTING
 #
 #----------------------------------------------------------------
-
-r <- read_TSPLIB("PWr/Lab35/att48.tsp")
-
 D <- generateDistMatrix(as.matrix(r))
 
 len <- length(r)/2
