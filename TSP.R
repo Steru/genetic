@@ -5,7 +5,59 @@ library(igraph)
 setwd("D:/")
 
 #---------------------------------------------------------------
+#
+# FUNCTION FOR GA
+#
+#----------------------------------------------------------------
+ga_Selection <- function(object, ...)
+{
+# Proportional (roulette wheel) selection with ratio solution to the best solution
+  prob <- abs(object@fitness)/max(abs(object@fitness))
+  sel <- sample(1:object@popSize, size = object@popSize, 
+                prob = pmin(pmax(0, prob), 1, na.rm = TRUE),
+                replace = TRUE)
+  out <- list(population = object@population[sel,,drop=FALSE],
+              fitness = object@fitness[sel])
+  return(out)
+}
+
+ga_Crossover <- function(object, parents, ...)
+{
+# Random value to cross (change will be value in 1..RANDOM)
+  parents <- object@population[parents,,drop = FALSE]
+  n <- ncol(parents)
+  cxPoints <- sample(1:n, size = 1)
+  cxPoints <- seq(1, cxPoints)
+  children <- matrix(as.double(NA), nrow = 2, ncol = n)
+  children[,cxPoints] <- parents[,cxPoints]
+  for(i in setdiff(1:n, cxPoints))
+     { if(!any(parents[2,i] == children[1,cxPoints]))
+         { children[1,i] <- parents[2,i] }
+       if(!any(parents[1,i] == children[2,cxPoints]))
+         { children[2,i] <- parents[1,i] }
+     }
+  children[1,is.na(children[1,])] <- setdiff(parents[2,], children[1,])
+  children[2,is.na(children[2,])] <- setdiff(parents[1,], children[2,])
+  out <- list(children = children, fitness = rep(NA,2))
+  return(out)
+}
+
+ga_Mutation <- function(object, parent, ...)
+{
+# Swap element[m] with first
+  mutate <- parent <- as.vector(object@population[parent,])
+  n <- length(parent)
+  m <- sample(1:n, size = 1)
+  value <- parent[m]
+  mutate[m] <- parent[1]
+  mutate[1] <- value
+  return(mutate)
+}
+
+#---------------------------------------------------------------
+#
 # FUNCTION TO DRAWING
+#
 #----------------------------------------------------------------
 plot.tour <- function(x, y, tour) {
     n <- nrow(tour)
@@ -18,7 +70,9 @@ plot.tour <- function(x, y, tour) {
     }
 }
 #---------------------------------------------------------------
+#
 # FUNCTION TO COUNTING
+#
 #----------------------------------------------------------------
 generateDistMatrix <- function(cordinates) {
 	len <- length(cordinates)/2
@@ -45,27 +99,28 @@ tourLength <- function(tour, distMatrix) {
 tpsFitness <- function(tour, ...) 1/tourLength(tour, ...)
 
 #---------------------------------------------------------------
-# LOAD DATA
+# load data
 #---------------------------------------------------------------
-
 r <- read_TSPLIB("PWr/Lab35/att48.tsp")
 
 #---------------------------------------------------------------
+#
 # START COUNTING
+#
 #----------------------------------------------------------------
-# create matrix with cities distances
 D <- generateDistMatrix(as.matrix(r))
 
-# number of cities
 len <- length(r)/2
 result <- 0
-# number of iteration
 iteration <- 30
 
 for(i in 1:iteration) {
 # run a GA algorithm
 GA.fit <- ga(type = "permutation", fitness = tpsFitness, distMatrix = D, min = 1, 
-    max = len, popSize = 10, maxiter = 500, run = 100, pmutation = 0.2, 
+    max = len, popSize = 10, maxiter = 500, run = 100, pmutation = 0.2,
+	selection = ga_Selection,
+	crossover = ga_Crossover,
+	mutation = ga_Mutation,
     monitor = NULL)
 
 	result <- result + 1/attr(GA.fit, "fitnessValue")
@@ -74,7 +129,9 @@ GA.fit <- ga(type = "permutation", fitness = tpsFitness, distMatrix = D, min = 1
 result <- result/iteration
 
 #---------------------------------------------------------------
+#
 # DRAWING
+#
 #----------------------------------------------------------------
 
 mat <- as.matrix(r)
