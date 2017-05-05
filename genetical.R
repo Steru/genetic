@@ -2,6 +2,45 @@ library(GA)
 
 setwd("D:/")
 
+ga_Selection <- function(object, ...)
+{
+    # Proportional (roulette wheel) selection with ratio solution to the best solution
+    prob <- abs(object@fitness)/max(abs(object@fitness))
+    sel <- sample(1:object@popSize, size = object@popSize, 
+                  prob = pmin(pmax(0, prob), 1, na.rm = TRUE),
+                  replace = TRUE)
+    out <- list(population = object@population[sel,,drop=FALSE],
+                fitness = object@fitness[sel])
+    return(out)
+}
+
+ga_Mutation <- function(object, parent, ...)
+{
+    # Uniform sqrt mutation
+    mutate <- parent <- as.vector(object@population[parent,])
+    n <- length(parent)
+    j <- sample(1:n, size = 1) {
+        mutate[j] <- sqrt(mutate[j])
+    }
+    return(mutate)
+}
+
+ga_Crossover <- function(object, parents, ...)
+{
+    # Mix every second element
+    parents <- object@population[parents,,drop = FALSE]
+    n <- ncol(parents)
+    children <- matrix(as.double(NA), nrow = 2, ncol = n)
+    children[1,] <- 	c(parents[1,seq(1, n, by = 2)],
+                       parents[2,seq(2, n, by = 2)])
+    children[2,] <- 	c(parents[2,seq(1, n, by = 2)],
+                       parents[1,seq(2, n, by = 2)])
+
+    out <- list(children = children, fitness = rep(NA, 2))
+    return(out)
+}
+
+
 f <- function(x1,x2,x3,x4,x5, functionNumber) {
      mat = matrix(nrow=length(x1), ncol=5)
      for(i in 1:length(x1)) {
@@ -15,7 +54,7 @@ f <- function(x1,x2,x3,x4,x5, functionNumber) {
 }
 
 fitnessValues <- matrix(1:6, ncol=6)
-ITERATION_COUNT <- 5
+ITERATION_COUNT <- 30
 # #################################################
 #      Main loops of the program. 
 #
@@ -27,22 +66,22 @@ ITERATION_COUNT <- 5
 # That's why these for loops are still here. 
 # Should be uncommented and commented when needed.
 # #################################################
+popS <- 25
+cros <- 0.8
+mut <- 0.2
 
 #for(popS in c(10, 20, 30, 100, 500)) { # value of population size
-    popS <- 30
      myTitle.popS <- toString(popS)
      #for(cros in seq(0,1,0.2)) { # value of crossover probability
-     cros <- 0.5
          myTitle.cros <- toString(cros)
-         for(mut in seq(0,1,0.2)) { # value of mutation probability
-            #mut <- 0.5
+         #for(mut in seq(0,1,0.2)) { # value of mutation probability
             myTitle.mut <- toString(mut)
          	fitnessValue1Variable <- fitnessValue3Variables <- fitnessValue5Variables <- 0
          	bufMean <- bufBest <- bufMedian <- 1
          	
          	# !! update accordingly
-         	myTitle.func <- "f5"
-         	for (iter in 1:5) {
+         	myTitle.func <- "f5_no_switches"
+         	for (iter in 1:ITERATION_COUNT) {
          	    
          	    ## # # # # # # # # # # # # # # # #
          	    ## <changeable piece>
@@ -51,6 +90,10 @@ ITERATION_COUNT <- 5
          	             fitness =  function(x) f(x[1], x[2], x[3], x[4], x[5], 7),
          	             min = c(-10, -10, -10, -10, -10), max = c(10, 10, 10, 10, 10), 
          	             popSize = popS, maxiter = 1000, run = 100,
+                         # !!! comment unwanted method switches        	            
+         	             #selection = ga_Selection,
+         	             #crossover = ga_Crossover,
+         	             #mutation = ga_Mutation,
          	             pcrossover = cros, pmutation = mut)
          	    fitnessValue5Variables <- fitnessValue5Variables + attr(GA, "fitnessValue")
          	    
@@ -117,12 +160,12 @@ ITERATION_COUNT <- 5
          	        }
          	        bufMedian <- bufMedian + currentMedianVal
          	    }
-         	} # end of "for (iter in 1:5)"
+         	} # end of "for (iter in 1:ITERATION_COUNT)"
          	
          	
-         	bufMean <- bufMean / 5
-         	bufBest <- bufBest / 5
-         	bufMedian <- bufMedian / 5
+         	bufMean <- bufMean / ITERATION_COUNT
+         	bufBest <- bufBest / ITERATION_COUNT
+         	bufMedian <- bufMedian / ITERATION_COUNT
          	
          	y0 <- 1:length(bufMean)
          	
@@ -134,7 +177,7 @@ ITERATION_COUNT <- 5
          	dev.off()
          	
          	plot.new
-         	plot(y0, bufMean, col="red", xlab="Iteration", ylab="Value", type="l")
+         	plot(y0, bufMean, col="red", xlab="Iteration", ylab="Value", type="l", ylim=range(c(bufMean, bufBest, bufMedian)))
          	lines(y0, bufBest, col="green")
          	lines(y0, bufMedian, col="blue")
          	legend(x = "bottomright", c("mean", "best", "median"), lty=c(1,1,1), lwd=c(2.5,2.5,2.5), col=c("red", "green","blue"))
@@ -151,12 +194,12 @@ ITERATION_COUNT <- 5
          	##
          	
          	
-         	fitnessValue1Variable <- fitnessValue1Variable / 5
-         	fitnessValue3Variables <- fitnessValue3Variables / 5
-         	fitnessValue5Variables <- fitnessValue5Variables / 5
+         	fitnessValue1Variable <- fitnessValue1Variable / ITERATION_COUNT
+         	fitnessValue3Variables <- fitnessValue3Variables / ITERATION_COUNT
+         	fitnessValue5Variables <- fitnessValue5Variables / ITERATION_COUNT
          	fitnessValues <- rbind(fitnessValues, c(popS, mut, cros, fitnessValue1Variable, fitnessValue3Variables, fitnessValue5Variables))
          	print(fitnessValues)
-         }
+         #}
 	#}
 #}
          
