@@ -17,6 +17,21 @@ ga_Selection <- function(object, ...)
   return(out)
 }
 
+ga_Crossover <- function(object, parents, ...)
+{
+# Mix every second element
+  parents <- object@population[parents,,drop = FALSE]
+  n <- ncol(parents)
+  children <- matrix(as.double(NA), nrow = 2, ncol = n)
+  children[1,] <- 	c(parents[1,seq(1, n, by = 2)],
+					parents[2,seq(2, n, by = 2)])
+  children[2,] <- 	c(parents[2,seq(1, n, by = 2)],
+					parents[1,seq(2, n, by = 2)])
+
+  out <- list(children = children, fitness = rep(NA, 2))
+  return(out)
+}
+
 ga_Mutation <- function(object, parent, ...)
 {
 # Uniform sqrt mutation
@@ -62,8 +77,7 @@ for (iter in 1:ITERATION) {
 			 popSize = popS, maxiter = 1000, run = 100,
 			 pcrossover = cros, pmutation = mut,
 			 selection = ga_Selection,
-			 crossover = ga_Crossover,
-			 mutation = ga_Mutation)
+			 crossover = ga_Crossover)
 	medianValue <- medianValue + attr(GA, "fitnessValue")
 }
 
