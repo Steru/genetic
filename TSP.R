@@ -54,40 +54,6 @@ ga_Mutation <- function(object, parent, ...)
   return(mutate)
 }
 
-#---------------------------------------------------------------
-#
-# FUNCTION TO DRAWING
-#
-#----------------------------------------------------------------
-plot.tour <- function(x, y, tour) {
-    n <- nrow(tour)
-    for (ii in seq(2, n)) {
-        for (jj in seq(1, ii)) {
-            w <- tour[ii, jj]
-            if (w > 0) 
-                lines(x[c(ii, jj)], y[c(ii, jj)], lwd = w, col = "lightgray")
-        }
-    }
-}
-#---------------------------------------------------------------
-#
-# FUNCTION TO COUNTING
-#
-#----------------------------------------------------------------
-generateDistMatrix <- function(cordinates) {
-	len <- length(cordinates)/2
-	dists <- matrix(nrow = len, ncol=len)
-	for(i in 1:len) {
-		for(j in 1:len) {
-			if(i == j) {
-				dists[i,j] <- 0
-			} else {
-				dists[i,j] <- sqrt((cordinates[i,1] - cordinates[j,1])^2 + (cordinates[i,2] - cordinates[j,2])^2)
-			}
-		}
-	}
-	return(dists)
-}
 
 # given a tour, calculate the total distance
 tourLength <- function(tour, distMatrix) {
@@ -101,7 +67,8 @@ tpsFitness <- function(tour, ...) 1/tourLength(tour, ...)
 #---------------------------------------------------------------
 # load data
 #---------------------------------------------------------------
-r <- read_TSPLIB("PWr/Lab35/att48.tsp")
+tspFile <- "att48.tsp"
+r <- read_TSPLIB("PWr/Lab35/" + tspFile)
 
 #---------------------------------------------------------------
 #
@@ -112,41 +79,161 @@ D <- generateDistMatrix(as.matrix(r))
 
 len <- length(r)/2
 result <- 0
-iteration <- 30
+iteration <- 15
+bufMean <- bufBest <- bufMedian <- 1
 
-for(i in 1:iteration) {
-# run a GA algorithm
-GA.fit <- ga(type = "permutation", fitness = tpsFitness, distMatrix = D, min = 1, 
-    max = len, popSize = 10, maxiter = 500, run = 100, pmutation = 0.2,
-	selection = ga_Selection,
-	crossover = ga_Crossover,
-	mutation = ga_Mutation,
-    monitor = NULL)
-
-	result <- result + 1/attr(GA.fit, "fitnessValue")
-}
-
-result <- result/iteration
+for (iter in 1:iteration) {
+         	    
+	## # # # # # # # # # # # # # # # #
+	## <changeable piece>
+	
+	GA <- ga(type = "permutation", fitness = tpsFitness, distMatrix = D, min = 1, 
+		max = len, popSize = 10, maxiter = 500, run = 100, pmutation = 0.2,
+		selection = ga_Selection,
+		crossover = ga_Crossover,
+		mutation = ga_Mutation,
+		monitor = NULL)
+	
+	result <- result + 1/attr(GA, "fitnessValue")
+	print(result)
+	
+	## </changeable piece> 
+	## # # # # # # # # # # # # # # # #
+	
+	currentMeanVal <- 1/attr(GA, "summary")[,"mean"]
+	currentMeanLength <- length(currentMeanVal)
+	bufMeanLength <- length(bufMean)
+	# when the next iteration result is shorter, get the longer buffer
+	if(bufMeanLength == 1){
+		bufMean <- currentMeanVal
+	} else {
+		if(currentMeanLength < bufMeanLength){
+			length(currentMeanVal) <- bufMeanLength
+			for(iter in currentMeanLength : bufMeanLength){
+				currentMeanVal[iter] <- currentMeanVal[currentMeanLength]
+			}
+		} else {
+			length(bufMean) <- currentMeanLength
+			for(iter in bufMeanLength : currentMeanLength){
+				bufMean[iter] <- bufMean[bufMeanLength]
+			}
+		}
+		bufMean <- bufMean + currentMeanVal
+	}
+	
+	currentBestVal <- 1/attr(GA, "summary")[,"max"]
+	currentBestLength <- length(currentBestVal)
+	bufBestLength <- length(bufBest)
+	if(bufBestLength == 1){
+		bufBest <- currentBestVal
+	} else {
+		if(currentBestLength < bufBestLength){
+			length(currentBestVal) <- bufBestLength
+			for(iter in currentBestLength : bufBestLength){
+				currentBestVal[iter] <- currentBestVal[currentBestLength]
+			}
+		} else {
+			length(bufBest) <- currentBestLength
+			for(iter in bufBestLength : currentBestLength){
+				bufBest[iter] <- bufBest[bufBestLength]
+			}
+		}
+		bufBest <- bufBest + currentBestVal
+	}
+	
+	currentMedianVal <- 1/attr(GA, "summary")[,"median"]
+	currentMedianLength <- length(currentMedianVal)
+	bufMedianLength <- length(bufMedian)
+	if(bufMedianLength == 1){
+		bufMedian <- currentMedianVal
+	} else {
+		if(currentMedianLength < bufMedianLength){
+			length(currentMedianVal) <- bufMedianLength
+			for(iter in currentMedianLength : bufMedianLength){
+				currentMedianVal[iter] <- currentMedianVal[currentMedianLength]
+			}
+		} else {
+			length(bufMedian) <- currentMedianLength
+			for(iter in bufMedianLength : currentMedianLength){
+				bufMedian[iter] <- bufMedian[bufMedianLength]
+			}
+		}
+		bufMedian <- bufMedian + currentMedianVal
+	}
+} 
 
 #---------------------------------------------------------------
 #
 # DRAWING
 #
 #----------------------------------------------------------------
+bufMean <- bufMean / iteration
+bufBest <- bufBest / iteration
+bufMedian <- bufMedian / iteration
 
-mat <- as.matrix(r)
-x <- mat[,1]
-y <- mat[,2]
-n <- length(x)
-tour <- GA.fit@solution[1, ]
-tour <- c(tour, tour[1])
+y0 <- 1:length(bufMean)
 
-plot(x, y, type = "n", asp = 1, xlab = "", ylab = "", main = "Tour after GA converged")
-points(x, y, pch = 16, cex = 1.5, col = "grey")
-abline(h = pretty(range(x), 10), v = pretty(range(y), 10), col = "lightgrey")
-n <- length(tour)
-arrows(x[tour[-n]], y[tour[-n]], x[tour[-1]], y[tour[-1]], length = 0.15, angle = 45, 
-    col = "steelblue", lwd = 2)
-text(x, y - 100, attr(GA.fit, "solution"), cex = 0.8)
+# plotting 
+plot.new
+plot(GA)
+#filename <- paste(tspFile, ".jpeg")
+#dev.copy(jpeg, file=filename)
+#dev.off()
+
+plot.new
+plot(y0, bufMean, col="red", xlab="Iteration", ylab="Value", type="l")
+lines(y0, bufBest, col="green")
+lines(y0, bufMedian, col="blue")
+legend(x = "topright", c("mean", "best", "median"), lty=c(1,1,1), lwd=c(2.5,2.5,2.5), col=c("red", "green","blue"))
+my.title <- paste(tspFile)
+title(my.title)
+
+# save the file
+myFilename <- paste(tspFile, "Better.jpeg", sep="_")
+dev.copy(jpeg, file=myFilename)
+dev.off()
+##
+
+         	
+
+#---------------------------------------------------------------
+#
+# FUNCTION TO COUNTING
+#
+#----------------------------------------------------------------
+#generateDistMatrix <- function(cordinates) {
+#	len <- length(cordinates)/2
+#	dists <- matrix(nrow = len, ncol=len)
+#	for(i in 1:len) {
+#		for(j in 1:len) {
+#			if(i == j) {
+#				dists[i,j] <- 0
+#			} else {
+#				dists[i,j] <- sqrt((cordinates[i,1] - cordinates[j,1])^2 + (cordinates[i,2] - cordinates[j,2])^2)
+#			}
+#		}
+#	}
+#	return(dists)
+#}
+#---------------------------------------------------------------
+#
+# DRAWING
+#
+#----------------------------------------------------------------
+
+#mat <- as.matrix(r)
+#x <- mat[,1]
+#y <- mat[,2]
+#n <- length(x)
+#tour <- GA.fit@solution[1, ]
+#tour <- c(tour, tour[1])
+
+#plot(x, y, type = "n", asp = 1, xlab = "", ylab = "", main = "Tour after GA converged")
+#points(x, y, pch = 16, cex = 1.5, col = "grey")
+#abline(h = pretty(range(x), 10), v = pretty(range(y), 10), col = "lightgrey")
+#n <- length(tour)
+#arrows(x[tour[-n]], y[tour[-n]], x[tour[-1]], y[tour[-1]], length = 0.15, angle = 45, 
+#    col = "steelblue", lwd = 2)
+#text(x, y - 100, attr(GA.fit, "solution"), cex = 0.8)
 
 # source: http://rpubs.com/somasdhavala/GAeg
