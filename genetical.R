@@ -16,14 +16,16 @@ ga_Selection <- function(object, ...)
 
 ga_Mutation <- function(object, parent, ...)
 {
-    # Uniform sqrt mutation
+    # Swap element[m] with first
     mutate <- parent <- as.vector(object@population[parent,])
     n <- length(parent)
-    j <- sample(1:n, size = 1) {
-        mutate[j] <- sqrt(mutate[j])
-    }
+    m <- sample(1:n, size = 1)
+    value <- parent[m]
+    mutate[m] <- parent[1]
+    mutate[1] <- value
     return(mutate)
 }
+
 
 ga_Crossover <- function(object, parents, ...)
 {
@@ -81,6 +83,10 @@ mut <- 0.2
          	
          	# !! update accordingly
          	myTitle.func <- "f5_no_switches"
+         	#myTitle.func <- "f5_crossover"
+         	#myTitle.func <- "f5_mutation"
+         	#myTitle.func <- "f5_selection"
+         	#myTitle.func <- "f5_all_switches"
          	for (iter in 1:ITERATION_COUNT) {
          	    
          	    ## # # # # # # # # # # # # # # # #

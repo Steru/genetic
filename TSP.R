@@ -181,7 +181,7 @@ plot(GA)
 #dev.off()
 
 plot.new
-plot(y0, bufMean, col="red", xlab="Iteration", ylab="Value", type="l")
+plot(y0, bufMean, col="red", xlab="Iteration", ylab="Value", type="l", , ylim=range(c(bufMean, bufBest, bufMedian)))
 lines(y0, bufBest, col="green")
 lines(y0, bufMedian, col="blue")
 legend(x = "topright", c("mean", "best", "median"), lty=c(1,1,1), lwd=c(2.5,2.5,2.5), col=c("red", "green","blue"))
