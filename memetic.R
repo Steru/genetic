@@ -109,6 +109,8 @@ for(valPoptim in c(0.0, 0.05, 0.1)) {
 		dev.copy(jpeg, file=filename)
 		dev.off()
 		
+		y0 <- 1:length(bufMean)
+		
 		plot.new
 		plot(y0, bufMean, col="red", 
 		     xlab="Iteration", ylab="Value", 
